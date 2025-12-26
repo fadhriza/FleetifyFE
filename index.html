@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleetify - Fleet Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bright-amber': '#f9c80e',
+                        'deep-mocha': '#362c28',
+                        'vibrant-coral': '#e87461',
+                        'slate-grey': '#7d8491',
+                        'white': '#fbfffe'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-white">
+    <header class="bg-deep-mocha text-white py-5 shadow-md">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="https://fleetify.id/logos/fleetify.png" alt="Fleetify Logo" class="h-10">
+                <h1 class="text-2xl font-bold">Fleetify</h1>
+            </div>
+            <nav>
+                <a href="login.html" class="btn-primary flex items-center gap-2">
+                    <i class="ri-login-box-line"></i>
+                    <span>Login</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero bg-vibrant-coral py-20">
+            <div class="container mx-auto px-4 text-center">
+                <h2 class="text-5xl font-bold text-white mb-6">Fleet Management Made Simple</h2>
+                <p class="text-xl text-white mb-8">Manage your fleet inventory and procurement with ease</p>
+                <a href="login.html" class="btn-primary text-lg px-8 py-3 bg-white text-vibrant-coral hover:bg-opacity-90">Get Started</a>
+            </div>
+        </section>
+
+        <section class="features py-16 bg-white">
+            <div class="container mx-auto px-4">
+                <h3 class="text-3xl font-bold text-center text-deep-mocha mb-12">Key Features</h3>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="feature-card p-6 border border-slate-grey rounded-lg hover:shadow-lg transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="ri-box-3-line text-3xl text-vibrant-coral"></i>
+                            <h4 class="text-xl font-bold text-deep-mocha">Inventory Management</h4>
+                        </div>
+                        <p class="text-slate-grey">Track and manage your fleet inventory in real-time</p>
+                    </div>
+                    <div class="feature-card p-6 border border-slate-grey rounded-lg hover:shadow-lg transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="ri-shopping-cart-line text-3xl text-vibrant-coral"></i>
+                            <h4 class="text-xl font-bold text-deep-mocha">Procurement System</h4>
+                        </div>
+                        <p class="text-slate-grey">Streamline your purchasing process with suppliers</p>
+                    </div>
+                    <div class="feature-card p-6 border border-slate-grey rounded-lg hover:shadow-lg transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="ri-bar-chart-line text-3xl text-vibrant-coral"></i>
+                            <h4 class="text-xl font-bold text-deep-mocha">Dashboard Analytics</h4>
+                        </div>
+                        <p class="text-slate-grey">Monitor your fleet operations with comprehensive insights</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-deep-mocha text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 Fleetify. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
