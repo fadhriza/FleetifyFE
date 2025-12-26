@@ -5,19 +5,25 @@ const Dashboard = {
     currentUser: null,
     inventoryParams: { page: 1, limit: 10, sort: 'created_at', search: '', filters: {} },
     purchasesParams: { page: 1, limit: 10, sort: 'created_at', search: '', filters: {} },
+    usersParams: { page: 1, limit: 10, sort: 'created_at', search: '', filters: {} },
     inventoryPagination: { page: 1, limit: 10, total_pages: 1, total_count: 0 },
     purchasesPagination: { page: 1, limit: 10, total_pages: 1, total_count: 0 },
+    usersPagination: { page: 1, limit: 10, total_pages: 1, total_count: 0 },
 
     init: function() {
         this.loadUserInfo();
         this.setupNavigation();
         this.setupInventoryControls();
         this.setupPurchasesControls();
+        this.setupUsersControls();
         this.loadInventory();
         this.loadSuppliers();
         this.loadItems();
         this.setupPurchaseForm();
         this.loadPurchases();
+        if (this.isAdmin()) {
+            this.loadUsers();
+        }
     },
 
     loadUserInfo: function() {
@@ -25,7 +31,14 @@ const Dashboard = {
         if (userStr) {
             this.currentUser = JSON.parse(userStr);
             $('#userInfo').text('Welcome, ' + (this.currentUser.full_name || this.currentUser.username));
+            if (this.isAdmin()) {
+                $('#usersMenu').show();
+            }
         }
+    },
+
+    isAdmin: function() {
+        return this.currentUser && this.currentUser.role && this.currentUser.role.toLowerCase() === 'admin';
     },
 
     setupNavigation: function() {
@@ -56,6 +69,16 @@ const Dashboard = {
             $('#pageTitle').text('Purchase History');
             this.purchasesParams.page = 1;
             this.loadPurchases();
+        } else if (page === 'users') {
+            if (!this.isAdmin()) {
+                App.showToast('Access denied. Admin role required.', 'error');
+                return;
+            }
+            $('#usersPage').show();
+            $('[data-page="users"]').addClass('active');
+            $('#pageTitle').text('Users Management');
+            this.usersParams.page = 1;
+            this.loadUsers();
         }
     },
 
@@ -165,6 +188,73 @@ const Dashboard = {
                 this.purchasesParams.page++;
                 this.loadPurchases();
             }
+        });
+    },
+
+    setupUsersControls: function() {
+        let searchTimeout;
+        $('#usersSearch').on('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.usersParams.search = $('#usersSearch').val();
+                this.usersParams.page = 1;
+                this.loadUsers();
+            }, 500);
+        });
+
+        $('#usersSort').on('change', () => {
+            this.usersParams.sort = $('#usersSort').val();
+            this.usersParams.page = 1;
+            this.loadUsers();
+        });
+
+        $('#usersFilterRole').on('change', () => {
+            const value = $('#usersFilterRole').val();
+            if (value) {
+                this.usersParams.filters.role = value;
+            } else {
+                delete this.usersParams.filters.role;
+            }
+            this.usersParams.page = 1;
+            this.loadUsers();
+        });
+
+        $('#usersLimit').on('change', () => {
+            this.usersParams.limit = parseInt($('#usersLimit').val());
+            this.usersParams.page = 1;
+            this.loadUsers();
+        });
+
+        $(document).on('click', '#usersPrevPage', () => {
+            if (this.usersParams.page > 1) {
+                this.usersParams.page--;
+                this.loadUsers();
+            }
+        });
+
+        $(document).on('click', '#usersNextPage', () => {
+            if (this.usersParams.page < this.usersPagination.total_pages) {
+                this.usersParams.page++;
+                this.loadUsers();
+            }
+        });
+
+        $(document).on('click', '.btn-edit-user', (e) => {
+            const username = $(e.target).data('username');
+            this.editUser(username);
+        });
+
+        $(document).on('click', '.btn-delete-user', (e) => {
+            const username = $(e.target).data('username');
+            this.deleteUser(username);
+        });
+
+        $('#btnSaveUser').on('click', () => {
+            this.saveUser();
+        });
+
+        $('#btnCancelEdit, #closeUserEdit').on('click', () => {
+            $('#userEditModal').fadeOut(200);
         });
     },
 
@@ -701,6 +791,190 @@ const Dashboard = {
 
         html += '</div>';
         $('#purchaseDetailContent').html(html);
+    },
+
+    loadUsers: function() {
+        if (!this.isAdmin()) {
+            return;
+        }
+
+        $('#usersLoading').show();
+        
+        const queryParams = QueryBuilder.buildQueryParams(this.usersParams);
+        
+        App.apiRequest({
+            endpoint: '/users',
+            method: 'GET',
+            data: queryParams
+        })
+        .done((response) => {
+            if (response.error === false && response.data) {
+                this.usersPagination = {
+                    page: response.page || 1,
+                    limit: response.limit || 10,
+                    total_pages: response.total_pages || 1,
+                    total_count: response.total_count || 0
+                };
+                this.renderUsers(response.data);
+                this.renderUsersPagination();
+            } else {
+                App.showToast('Failed to load users', 'error');
+            }
+        })
+        .fail((xhr) => {
+            let errorMsg = 'Failed to load users';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            App.showToast(errorMsg, 'error');
+        })
+        .always(() => {
+            $('#usersLoading').hide();
+        });
+    },
+
+    renderUsers: function(users) {
+        const tbody = $('#usersTableBody');
+        tbody.empty();
+
+        if (users.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center p-4 text-slate-grey">No users found</td></tr>');
+            return;
+        }
+
+        users.forEach((user) => {
+            const row = $('<tr>');
+            row.append($('<td>').text(user.users_id || '-'));
+            row.append($('<td>').text(user.username || '-'));
+            row.append($('<td>').text(user.full_name || '-'));
+            row.append($('<td>').text(user.email || '-'));
+            row.append($('<td>').text(user.phone || '-'));
+            row.append($('<td>').html(
+                '<span class="chip chip-' + (user.role === 'admin' ? 'success' : 'info') + '">' + 
+                (user.role || 'user') + '</span>'
+            ));
+            row.append($('<td>').html(
+                '<span class="chip chip-' + (user.is_active ? 'success' : 'error') + '">' + 
+                (user.is_active ? 'Active' : 'Inactive') + '</span>'
+            ));
+            row.append($('<td>').html(
+                '<button class="btn-tertiary btn-edit-user mr-2" data-username="' + (user.username || '') + '">Edit</button>' +
+                '<button class="btn-secondary btn-delete-user" data-username="' + (user.username || '') + '">Delete</button>'
+            ));
+            tbody.append(row);
+        });
+    },
+
+    renderUsersPagination: function() {
+        const pagination = this.usersPagination;
+        const info = `Showing ${((pagination.page - 1) * pagination.limit) + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total_count)} of ${pagination.total_count} users`;
+        $('#usersPaginationInfo').text(info);
+        
+        $('#usersPrevPage').prop('disabled', pagination.page <= 1);
+        $('#usersNextPage').prop('disabled', pagination.page >= pagination.total_pages);
+    },
+
+    editUser: function(username) {
+        App.showLoading();
+
+        App.apiRequest({
+            endpoint: '/user/' + username,
+            method: 'GET'
+        })
+        .done((response) => {
+            if (response.error === false && response.data) {
+                const user = response.data;
+                $('#editUsername').val(user.username);
+                $('#editRole').val(user.role || 'user');
+                $('#editFullName').val(user.full_name || '');
+                $('#editEmail').val(user.email || '');
+                $('#editPhone').val(user.phone || '');
+                $('#editIsActive').prop('checked', user.is_active !== false);
+                $('#userEditModal').fadeIn(200);
+            } else {
+                App.showToast('Failed to load user details', 'error');
+            }
+        })
+        .fail(() => {
+            App.showToast('Failed to load user details', 'error');
+        })
+        .always(() => {
+            App.hideLoading();
+        });
+    },
+
+    saveUser: function() {
+        const username = $('#editUsername').val();
+        const role = $('#editRole').val();
+        const fullName = $('#editFullName').val().trim();
+        const email = $('#editEmail').val().trim();
+        const phone = $('#editPhone').val().trim();
+        const isActive = $('#editIsActive').is(':checked');
+
+        const updateData = {};
+        if (role) updateData.role = role;
+        if (fullName) updateData.full_name = fullName;
+        if (email) updateData.email = email;
+        if (phone) updateData.phone = phone;
+        updateData.is_active = isActive;
+
+        App.showLoading();
+
+        App.apiRequest({
+            endpoint: '/user/' + username,
+            method: 'PUT',
+            data: updateData
+        })
+        .done((response) => {
+            if (response.error === false) {
+                App.showToast('User updated successfully', 'success');
+                $('#userEditModal').fadeOut(200);
+                this.loadUsers();
+            } else {
+                App.showToast('Failed to update user', 'error');
+            }
+        })
+        .fail((xhr) => {
+            let errorMsg = 'Failed to update user';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            App.showToast(errorMsg, 'error');
+        })
+        .always(() => {
+            App.hideLoading();
+        });
+    },
+
+    deleteUser: function(username) {
+        if (!confirm('Are you sure you want to delete user "' + username + '"? This action cannot be undone.')) {
+            return;
+        }
+
+        App.showLoading();
+
+        App.apiRequest({
+            endpoint: '/user/' + username,
+            method: 'DELETE'
+        })
+        .done((response) => {
+            if (response.error === false) {
+                App.showToast('User deleted successfully', 'success');
+                this.loadUsers();
+            } else {
+                App.showToast('Failed to delete user', 'error');
+            }
+        })
+        .fail((xhr) => {
+            let errorMsg = 'Failed to delete user';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            App.showToast(errorMsg, 'error');
+        })
+        .always(() => {
+            App.hideLoading();
+        });
     }
 };
 
@@ -716,6 +990,7 @@ $(document).ready(function() {
     $(document).on('click', '.modal-overlay', function(e) {
         if ($(e.target).hasClass('modal-overlay')) {
             $('#purchaseDetailModal').fadeOut(200);
+            $('#userEditModal').fadeOut(200);
         }
     });
 

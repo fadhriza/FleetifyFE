@@ -51,6 +51,12 @@
                                 <span class="font-medium">Purchase History</span>
                             </a>
                         </li>
+                        <li id="usersMenu" style="display: none;">
+                            <a href="#" data-page="users" class="nav-link flex items-center gap-3 p-3 rounded-lg transition-all duration-200">
+                                <i class="ri-user-settings-line text-xl"></i>
+                                <span class="font-medium">Users</span>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
             </div>
@@ -303,6 +309,79 @@
                         <button id="purchasesNextPage" class="btn-secondary" disabled>Next</button>
                     </div>
                 </div>
+
+                <div id="usersPage" class="page-content" style="display: none;">
+                    <h2 class="text-2xl font-bold text-deep-mocha mb-6">Users Management</h2>
+                    
+                    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-deep-mocha mb-2">Search</label>
+                            <input type="text" id="usersSearch" class="fillbox w-full" placeholder="Search users...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-deep-mocha mb-2">Sort</label>
+                            <select id="usersSort" class="fillbox w-full">
+                                <option value="created_at">Created Date</option>
+                                <option value="-created_at">Created Date (Desc)</option>
+                                <option value="username">Username (A-Z)</option>
+                                <option value="-username">Username (Z-A)</option>
+                                <option value="full_name">Name (A-Z)</option>
+                                <option value="-full_name">Name (Z-A)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-deep-mocha mb-2">Role</label>
+                            <select id="usersFilterRole" class="fillbox w-full">
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <label class="text-sm font-medium text-deep-mocha">Items per page:</label>
+                            <select id="usersLimit" class="fillbox" style="width: auto;">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div id="usersPaginationInfo" class="text-sm text-slate-grey"></div>
+                    </div>
+
+                    <div id="usersLoading" class="div-loading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="8" class="text-center text-slate-grey">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 flex justify-center gap-2">
+                        <button id="usersPrevPage" class="btn-secondary" disabled>Previous</button>
+                        <button id="usersNextPage" class="btn-secondary" disabled>Next</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -319,6 +398,48 @@
                 <button class="modal-close" id="closePurchaseDetail">&times;</button>
             </div>
             <div class="modal-body" id="purchaseDetailContent">
+            </div>
+        </div>
+    </div>
+
+    <div id="userEditModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-deep-mocha">Edit User</h3>
+                <button class="modal-close" id="closeUserEdit">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userEditForm">
+                    <input type="hidden" id="editUsername">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Role</label>
+                        <select id="editRole" class="fillbox w-full">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Full Name</label>
+                        <input type="text" id="editFullName" class="fillbox w-full">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Email</label>
+                        <input type="email" id="editEmail" class="fillbox w-full">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Phone</label>
+                        <input type="text" id="editPhone" class="fillbox w-full">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">
+                            <input type="checkbox" id="editIsActive"> Active
+                        </label>
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" id="btnCancelEdit" class="btn-secondary">Cancel</button>
+                        <button type="button" id="btnSaveUser" class="btn-primary">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
