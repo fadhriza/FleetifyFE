@@ -91,7 +91,9 @@ const DashboardPurchaseForm = {
             row.append($('<td>').text(App.formatCurrency(item.price)));
             row.append($('<td>').text(App.formatCurrency(subtotal)));
             row.append($('<td>').html(
-                '<button class="btn-secondary btn-remove-item" data-index="' + index + '">Hapus</button>'
+                '<div class="flex items-center gap-2">' +
+                '<button class="btn-secondary btn-icon btn-remove-item" data-index="' + index + '" title="Remove"><i class="ri-delete-bin-line"></i></button>' +
+                '</div>'
             ));
             tbody.append(row);
         });
@@ -178,6 +180,10 @@ const DashboardPurchaseForm = {
             let errorMsg = 'Failed to submit order';
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMsg = xhr.responseJSON.message;
+            } else if (xhr.status === 400) {
+                errorMsg = 'Invalid request. Please check your input.';
+            } else if (xhr.status === 500) {
+                errorMsg = 'Server error. Transaction was rolled back. Please try again.';
             }
             App.showToast(errorMsg, 'error');
         })

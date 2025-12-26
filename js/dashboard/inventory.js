@@ -147,8 +147,10 @@ const DashboardInventory = {
             const actionsCell = $('<td>');
             if (canModify) {
                 actionsCell.html(
-                    '<button class="btn-tertiary btn-edit-item mr-2" data-id="' + (item.items_id || '') + '">Edit</button>' +
-                    '<button class="btn-secondary btn-delete-item" data-id="' + (item.items_id || '') + '">Delete</button>'
+                    '<div class="flex items-center gap-2">' +
+                    '<button class="btn-tertiary btn-icon btn-edit-item" data-id="' + (item.items_id || '') + '" title="Edit"><i class="ri-edit-line"></i></button>' +
+                    '<button class="btn-secondary btn-icon btn-delete-item" data-id="' + (item.items_id || '') + '" title="Delete"><i class="ri-delete-bin-line"></i></button>' +
+                    '</div>'
                 );
             } else {
                 actionsCell.html('<span class="text-slate-grey text-sm">No actions</span>');

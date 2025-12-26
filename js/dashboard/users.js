@@ -131,8 +131,10 @@ const DashboardUsers = {
                 (user.is_active ? 'Active' : 'Inactive') + '</span>'
             ));
             row.append($('<td>').html(
-                '<button class="btn-tertiary btn-edit-user mr-2" data-username="' + (user.username || '') + '">Edit</button>' +
-                '<button class="btn-secondary btn-delete-user" data-username="' + (user.username || '') + '">Delete</button>'
+                '<div class="flex items-center gap-2">' +
+                '<button class="btn-tertiary btn-icon btn-edit-user" data-username="' + (user.username || '') + '" title="Edit"><i class="ri-edit-line"></i></button>' +
+                '<button class="btn-secondary btn-icon btn-delete-user" data-username="' + (user.username || '') + '" title="Delete"><i class="ri-delete-bin-line"></i></button>' +
+                '</div>'
             ));
             tbody.append(row);
         });

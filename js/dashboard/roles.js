@@ -156,7 +156,9 @@ const DashboardRoles = {
             row.append($('<td>').text(role.role_name || '-'));
             row.append($('<td>').text(role.role_description || '-'));
             row.append($('<td>').html(
-                '<button class="btn-tertiary btn-edit-role" data-oid="' + (role.role_oid || '') + '">Edit</button>'
+                '<div class="flex items-center gap-2">' +
+                '<button class="btn-tertiary btn-icon btn-edit-role" data-oid="' + (role.role_oid || '') + '" title="Edit"><i class="ri-edit-line"></i></button>' +
+                '</div>'
             ));
             tbody.append(row);
         });
