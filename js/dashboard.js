@@ -3,10 +3,16 @@ const Dashboard = {
     items: [],
     suppliers: [],
     currentUser: null,
+    inventoryParams: { page: 1, limit: 10, sort: 'created_at', search: '', filters: {} },
+    purchasesParams: { page: 1, limit: 10, sort: 'created_at', search: '', filters: {} },
+    inventoryPagination: { page: 1, limit: 10, total_pages: 1, total_count: 0 },
+    purchasesPagination: { page: 1, limit: 10, total_pages: 1, total_count: 0 },
 
     init: function() {
         this.loadUserInfo();
         this.setupNavigation();
+        this.setupInventoryControls();
+        this.setupPurchasesControls();
         this.loadInventory();
         this.loadSuppliers();
         this.loadItems();
@@ -38,6 +44,7 @@ const Dashboard = {
             $('#inventoryPage').show();
             $('[data-page="inventory"]').addClass('active');
             $('#pageTitle').text('Inventory');
+            this.inventoryParams.page = 1;
             this.loadInventory();
         } else if (page === 'purchase') {
             $('#purchasePage').show();
@@ -47,21 +54,141 @@ const Dashboard = {
             $('#purchasesPage').show();
             $('[data-page="purchases"]').addClass('active');
             $('#pageTitle').text('Purchase History');
+            this.purchasesParams.page = 1;
             this.loadPurchases();
         }
+    },
+
+    setupInventoryControls: function() {
+        let searchTimeout;
+        $('#inventorySearch').on('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.inventoryParams.search = $('#inventorySearch').val();
+                this.inventoryParams.page = 1;
+                this.loadInventory();
+            }, 500);
+        });
+
+        $('#inventorySort').on('change', () => {
+            this.inventoryParams.sort = $('#inventorySort').val();
+            this.inventoryParams.page = 1;
+            this.loadInventory();
+        });
+
+        $('#inventoryFilterCategory').on('change', () => {
+            const value = $('#inventoryFilterCategory').val();
+            if (value) {
+                this.inventoryParams.filters.category = value;
+            } else {
+                delete this.inventoryParams.filters.category;
+            }
+            this.inventoryParams.page = 1;
+            this.loadInventory();
+        });
+
+        $('#inventoryFilterUnit').on('change', () => {
+            const value = $('#inventoryFilterUnit').val();
+            if (value) {
+                this.inventoryParams.filters.unit = value;
+            } else {
+                delete this.inventoryParams.filters.unit;
+            }
+            this.inventoryParams.page = 1;
+            this.loadInventory();
+        });
+
+        $('#inventoryLimit').on('change', () => {
+            this.inventoryParams.limit = parseInt($('#inventoryLimit').val());
+            this.inventoryParams.page = 1;
+            this.loadInventory();
+        });
+
+        $(document).on('click', '#inventoryPrevPage', () => {
+            if (this.inventoryParams.page > 1) {
+                this.inventoryParams.page--;
+                this.loadInventory();
+            }
+        });
+
+        $(document).on('click', '#inventoryNextPage', () => {
+            if (this.inventoryParams.page < this.inventoryPagination.total_pages) {
+                this.inventoryParams.page++;
+                this.loadInventory();
+            }
+        });
+    },
+
+    setupPurchasesControls: function() {
+        let searchTimeout;
+        $('#purchasesSearch').on('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.purchasesParams.search = $('#purchasesSearch').val();
+                this.purchasesParams.page = 1;
+                this.loadPurchases();
+            }, 500);
+        });
+
+        $('#purchasesSort').on('change', () => {
+            this.purchasesParams.sort = $('#purchasesSort').val();
+            this.purchasesParams.page = 1;
+            this.loadPurchases();
+        });
+
+        $('#purchasesFilterStatus').on('change', () => {
+            const value = $('#purchasesFilterStatus').val();
+            if (value) {
+                this.purchasesParams.filters.status = value;
+            } else {
+                delete this.purchasesParams.filters.status;
+            }
+            this.purchasesParams.page = 1;
+            this.loadPurchases();
+        });
+
+        $('#purchasesLimit').on('change', () => {
+            this.purchasesParams.limit = parseInt($('#purchasesLimit').val());
+            this.purchasesParams.page = 1;
+            this.loadPurchases();
+        });
+
+        $(document).on('click', '#purchasesPrevPage', () => {
+            if (this.purchasesParams.page > 1) {
+                this.purchasesParams.page--;
+                this.loadPurchases();
+            }
+        });
+
+        $(document).on('click', '#purchasesNextPage', () => {
+            if (this.purchasesParams.page < this.purchasesPagination.total_pages) {
+                this.purchasesParams.page++;
+                this.loadPurchases();
+            }
+        });
     },
 
     loadInventory: function() {
         $('#inventoryLoading').show();
         
+        const queryParams = QueryBuilder.buildQueryParams(this.inventoryParams);
+        
         App.apiRequest({
             endpoint: '/items',
-            method: 'GET'
+            method: 'GET',
+            data: queryParams
         })
         .done((response) => {
             if (response.error === false && response.data) {
                 this.items = response.data;
+                this.inventoryPagination = {
+                    page: response.page || 1,
+                    limit: response.limit || 10,
+                    total_pages: response.total_pages || 1,
+                    total_count: response.total_count || 0
+                };
                 this.renderInventory(response.data);
+                this.renderInventoryPagination();
             } else {
                 App.showToast('Failed to load inventory', 'error');
             }
@@ -87,6 +214,9 @@ const Dashboard = {
             return;
         }
 
+        const categories = new Set();
+        const units = new Set();
+
         items.forEach(item => {
             const row = $('<tr>');
             row.append($('<td>').text(item.items_id || '-'));
@@ -97,13 +227,48 @@ const Dashboard = {
             row.append($('<td>').text(item.unit || '-'));
             row.append($('<td>').text(item.min_stock || 0));
             tbody.append(row);
+
+            if (item.category) categories.add(item.category);
+            if (item.unit) units.add(item.unit);
         });
+
+        this.populateFilterOptions('inventoryFilterCategory', Array.from(categories).sort());
+        this.populateFilterOptions('inventoryFilterUnit', Array.from(units).sort());
+    },
+
+    populateFilterOptions: function(selectId, options) {
+        const select = $('#' + selectId);
+        const currentValue = select.val();
+        const firstOption = select.find('option:first');
+        
+        select.empty();
+        select.append(firstOption);
+        
+        options.forEach(option => {
+            select.append($('<option>').val(option).text(option));
+        });
+        
+        if (currentValue && options.includes(currentValue)) {
+            select.val(currentValue);
+        }
+    },
+
+    renderInventoryPagination: function() {
+        const pagination = this.inventoryPagination;
+        const info = `Showing ${((pagination.page - 1) * pagination.limit) + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total_count)} of ${pagination.total_count} items`;
+        $('#inventoryPaginationInfo').text(info);
+        
+        $('#inventoryPrevPage').prop('disabled', pagination.page <= 1);
+        $('#inventoryNextPage').prop('disabled', pagination.page >= pagination.total_pages);
     },
 
     loadSuppliers: function() {
+        const queryParams = QueryBuilder.buildQueryParams({ page: 1, limit: 100, filters: { is_active: 'true' } });
+        
         App.apiRequest({
             endpoint: '/suppliers',
-            method: 'GET'
+            method: 'GET',
+            data: queryParams
         })
         .done((response) => {
             if (response.error === false && response.data) {
@@ -161,9 +326,12 @@ const Dashboard = {
     },
 
     loadItems: function() {
+        const queryParams = QueryBuilder.buildQueryParams({ page: 1, limit: 100 });
+        
         App.apiRequest({
             endpoint: '/items',
-            method: 'GET'
+            method: 'GET',
+            data: queryParams
         })
         .done((response) => {
             if (response.error === false && response.data) {
@@ -408,13 +576,23 @@ const Dashboard = {
     loadPurchases: function() {
         $('#purchasesLoading').show();
         
+        const queryParams = QueryBuilder.buildQueryParams(this.purchasesParams);
+        
         App.apiRequest({
             endpoint: '/purchasings',
-            method: 'GET'
+            method: 'GET',
+            data: queryParams
         })
         .done((response) => {
             if (response.error === false && response.data) {
+                this.purchasesPagination = {
+                    page: response.page || 1,
+                    limit: response.limit || 10,
+                    total_pages: response.total_pages || 1,
+                    total_count: response.total_count || 0
+                };
                 this.renderPurchases(response.data);
+                this.renderPurchasesPagination();
             } else {
                 App.showToast('Failed to load purchases', 'error');
             }
@@ -457,6 +635,15 @@ const Dashboard = {
         });
     },
 
+    renderPurchasesPagination: function() {
+        const pagination = this.purchasesPagination;
+        const info = `Showing ${((pagination.page - 1) * pagination.limit) + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total_count)} of ${pagination.total_count} purchases`;
+        $('#purchasesPaginationInfo').text(info);
+        
+        $('#purchasesPrevPage').prop('disabled', pagination.page <= 1);
+        $('#purchasesNextPage').prop('disabled', pagination.page >= pagination.total_pages);
+    },
+
     viewPurchaseDetail: function(purchaseId) {
         App.showLoading();
 
@@ -493,23 +680,23 @@ const Dashboard = {
         }
 
         if (purchase.details && purchase.details.length > 0) {
-            html += '<div><strong>Items:</strong></div>';
-            html += '<table class="w-full border-collapse border border-slate-grey mt-2">';
-            html += '<thead class="bg-slate-grey text-white"><tr>';
-            html += '<th class="border border-slate-grey p-2 text-left">Item</th>';
-            html += '<th class="border border-slate-grey p-2 text-left">Qty</th>';
-            html += '<th class="border border-slate-grey p-2 text-left">Subtotal</th>';
+            html += '<div class="mt-4"><strong>Items:</strong></div>';
+            html += '<div class="overflow-x-auto mt-2"><table>';
+            html += '<thead><tr>';
+            html += '<th>Item</th>';
+            html += '<th>Qty</th>';
+            html += '<th>Subtotal</th>';
             html += '</tr></thead><tbody>';
             
             purchase.details.forEach(detail => {
                 html += '<tr>';
-                html += '<td class="border border-slate-grey p-2">' + (detail.item_name || 'Item #' + (detail.item_id || '-')) + '</td>';
-                html += '<td class="border border-slate-grey p-2">' + (detail.qty || 0) + '</td>';
-                html += '<td class="border border-slate-grey p-2">' + App.formatCurrency(detail.subtotal || 0) + '</td>';
+                html += '<td>' + (detail.item_name || 'Item #' + (detail.item_id || '-')) + '</td>';
+                html += '<td>' + (detail.qty || 0) + '</td>';
+                html += '<td>' + App.formatCurrency(detail.subtotal || 0) + '</td>';
                 html += '</tr>';
             });
             
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
         }
 
         html += '</div>';

@@ -208,3 +208,90 @@ body {
     padding: 20px;
 }
 
+table {
+    @apply w-full border-collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background-color: var(--white);
+}
+
+table thead {
+    background: var(--deep-mocha);
+}
+
+table thead th {
+    @apply font-semibold text-sm uppercase tracking-wider;
+    color: #ffffff;
+    padding: 16px 20px;
+    text-align: left;
+    border: none;
+    position: relative;
+}
+
+table thead th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(125, 132, 145, 0.1);
+}
+
+table tbody tr:nth-child(even) {
+    background-color: rgba(125, 132, 145, 0.03);
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: var(--white);
+}
+
+table tbody tr:hover {
+    background-color: rgba(232, 116, 97, 0.08);
+    transform: scale(1.001);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+table tbody td {
+    padding: 16px 20px;
+    color: var(--deep-mocha);
+    font-size: 14px;
+    border: none;
+    vertical-align: middle;
+}
+
+table tbody td:first-child {
+    font-weight: 600;
+    color: var(--deep-mocha);
+}
+
+table tfoot {
+    background-color: rgba(125, 132, 145, 0.05);
+    border-top: 2px solid var(--slate-grey);
+}
+
+table tfoot td {
+    padding: 16px 20px;
+    border: none;
+}
+
+.overflow-x-auto {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    opacity: 0.5;
+}
+
