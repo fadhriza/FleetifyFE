@@ -1,4 +1,6 @@
 $(document).ready(function() {
+    loadRolesForRegister();
+
     $('#showRegister').on('click', function(e) {
         e.preventDefault();
         $('#loginForm').hide();
@@ -74,7 +76,7 @@ $(document).ready(function() {
         const registerData = {
             username,
             password,
-            role,
+            role: role.toUpperCase(),
             full_name: fullName
         };
 
@@ -127,5 +129,47 @@ $(document).ready(function() {
             }, 1000);
         });
     });
+
+    function loadRolesForRegister() {
+        const token = localStorage.getItem(CONFIG.TOKEN_KEY);
+        const select = $('#regRole');
+        
+        if (token) {
+            App.apiRequest({
+                endpoint: '/roles',
+                method: 'GET',
+                data: { page: 1, limit: 100 }
+            })
+            .done(function(response) {
+                if (response.error === false && response.data) {
+                    select.empty();
+                    select.append('<option value="">Select Role</option>');
+                    response.data.forEach(function(role) {
+                        select.append($('<option>').val(role.role_oid.toLowerCase()).text(role.role_name || role.role_oid));
+                    });
+                }
+            })
+            .fail(function() {
+                populateDefaultRoles(select);
+            });
+        } else {
+            populateDefaultRoles(select);
+        }
+    }
+
+    function populateDefaultRoles(select) {
+        select.empty();
+        select.append('<option value="">Select Role</option>');
+        const defaultRoles = [
+            { value: 'user', text: 'User' },
+            { value: 'admin', text: 'Admin' },
+            { value: 'manager', text: 'Manager' },
+            { value: 'suppliers', text: 'Suppliers' },
+            { value: 'mitra', text: 'Mitra' }
+        ];
+        defaultRoles.forEach(function(role) {
+            select.append($('<option>').val(role.value).text(role.text));
+        });
+    }
 });
 

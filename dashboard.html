@@ -57,6 +57,12 @@
                                 <span class="font-medium">Users</span>
                             </a>
                         </li>
+                        <li id="rolesMenu" style="display: none;">
+                            <a href="#" data-page="roles" class="nav-link flex items-center gap-3 p-3 rounded-lg transition-all duration-200">
+                                <i class="ri-shield-user-line text-xl"></i>
+                                <span class="font-medium">Roles</span>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
             </div>
@@ -85,7 +91,10 @@
             <div class="p-6">
                 <div id="inventoryPage" class="page-content">
                     <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-deep-mocha mb-4">Inventory</h2>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-deep-mocha">Inventory</h2>
+                            <button id="btnCreateItem" class="btn-primary" style="display: none;">Create Item</button>
+                        </div>
                         
                         <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                             <div class="lg:col-span-2">
@@ -146,11 +155,12 @@
                                         <th>Category</th>
                                         <th>Unit</th>
                                         <th>Min Stock</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="inventoryTableBody">
                                     <tr>
-                                        <td colspan="7" class="text-center text-slate-grey">Loading inventory...</td>
+                                        <td colspan="8" class="text-center text-slate-grey">Loading inventory...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -382,6 +392,74 @@
                         <button id="usersNextPage" class="btn-secondary" disabled>Next</button>
                     </div>
                 </div>
+
+                <div id="rolesPage" class="page-content" style="display: none;">
+                    <h2 class="text-2xl font-bold text-deep-mocha mb-6">Roles Management</h2>
+                    
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <button id="btnCreateRole" class="btn-primary">Create Role</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-deep-mocha mb-2">Search</label>
+                            <input type="text" id="rolesSearch" class="fillbox w-full" placeholder="Search roles...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-deep-mocha mb-2">Sort</label>
+                            <select id="rolesSort" class="fillbox w-full">
+                                <option value="created_timestamp">Created Date</option>
+                                <option value="-created_timestamp">Created Date (Desc)</option>
+                                <option value="role_oid">Role OID (A-Z)</option>
+                                <option value="-role_oid">Role OID (Z-A)</option>
+                                <option value="role_name">Role Name (A-Z)</option>
+                                <option value="-role_name">Role Name (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <label class="text-sm font-medium text-deep-mocha">Items per page:</label>
+                            <select id="rolesLimit" class="fillbox" style="width: auto;">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div id="rolesPaginationInfo" class="text-sm text-slate-grey"></div>
+                    </div>
+
+                    <div id="rolesLoading" class="div-loading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Role OID</th>
+                                    <th>Role Name</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rolesTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-slate-grey">Loading roles...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 flex justify-center gap-2">
+                        <button id="rolesPrevPage" class="btn-secondary" disabled>Previous</button>
+                        <button id="rolesNextPage" class="btn-secondary" disabled>Next</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -414,8 +492,7 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-deep-mocha mb-2">Role</label>
                         <select id="editRole" class="fillbox w-full">
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                            <option value="">Select Role</option>
                         </select>
                     </div>
                     <div class="mb-4">
@@ -444,10 +521,90 @@
         </div>
     </div>
 
+    <div id="roleEditModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-deep-mocha" id="roleModalTitle">Create Role</h3>
+                <button class="modal-close" id="closeRoleEdit">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="roleEditForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Role OID</label>
+                        <input type="text" id="editRoleOid" class="fillbox w-full" placeholder="e.g., MANAGER">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Role Name</label>
+                        <input type="text" id="editRoleName" class="fillbox w-full" placeholder="e.g., Manager">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Description</label>
+                        <textarea id="editRoleDescription" class="fillbox w-full" rows="3" placeholder="Role description"></textarea>
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" id="btnCancelRole" class="btn-secondary">Cancel</button>
+                        <button type="button" id="btnSaveRole" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="itemEditModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-deep-mocha" id="itemModalTitle">Create Item</h3>
+                <button class="modal-close" id="closeItemEdit">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="itemEditForm">
+                    <input type="hidden" id="editItemId">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Name</label>
+                        <input type="text" id="editItemName" class="fillbox w-full" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Stock</label>
+                        <input type="number" id="editItemStock" class="fillbox w-full" min="0" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Price</label>
+                        <input type="number" id="editItemPrice" class="fillbox w-full" min="0" step="0.01" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Category</label>
+                        <input type="text" id="editItemCategory" class="fillbox w-full">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Unit</label>
+                        <input type="text" id="editItemUnit" class="fillbox w-full">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-deep-mocha mb-2">Min Stock</label>
+                        <input type="number" id="editItemMinStock" class="fillbox w-full" min="0">
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" id="btnCancelItem" class="btn-secondary">Cancel</button>
+                        <button type="button" id="btnSaveItem" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="js/config.js"></script>
     <script src="js/query.js"></script>
     <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/dashboard/core.js"></script>
+    <script src="js/dashboard/navigation.js"></script>
+    <script src="js/dashboard/suppliers.js"></script>
+    <script src="js/dashboard/items.js"></script>
+    <script src="js/dashboard/inventory.js"></script>
+    <script src="js/dashboard/purchase-form.js"></script>
+    <script src="js/dashboard/purchases.js"></script>
+    <script src="js/dashboard/users.js"></script>
+    <script src="js/dashboard/roles.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>
